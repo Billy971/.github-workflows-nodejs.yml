@@ -1,0 +1,51 @@
+name: Node.js CI
+
+# Exécute le workflow sur les pushs et les pull requests vers la branche main
+on:
+  push:
+    branches: ['main']
+  pull_request:
+    branches: ['main']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    # Utilise une matrice pour définir la version de Node.js, ici on peut l'ajouter si besoin
+    strategy:
+      matrix:
+        node-version: [14.x, 16.x]  # Spécifiez les versions de Node.js si nécessaire
+
+    steps:
+      # Étape 1: Vérifier le code (checkout)
+      - uses: actions/checkout@v3
+
+      # Étape 2: Installer Node.js
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'  # Active la mise en cache de npm
+
+      # Étape 3: Installer les dépendances
+      - name: Install
+        run: npm ci --prefer-offline
+
+      # Étape 4: Linter pour valider le code
+      - name: Validate
+        run: npm run lint
+
+      # Étape 5: Tests unitaires
+      - name: Test
+        run: npm test
+
+      # Étape 6: Build pour la production
+      - name: Build for production
+        run: npm run build
+
+      # Étape 7: Sauvegarder les artefacts de build
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: web
+          path: ./dist  # Spécifie le chemin de sortie du build
